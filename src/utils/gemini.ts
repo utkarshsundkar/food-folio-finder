@@ -14,8 +14,8 @@ const delay = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
 
 export async function searchFood(query: string): Promise<FoodData[]> {
   try {
-    // Add a small delay before making the request to prevent rapid-fire API calls
-    await delay(1000);
+    // Increase delay to 2 seconds
+    await delay(2000);
 
     const response = await fetch(
       `https://generativelanguage.googleapis.com/v1beta/models/gemini-pro:generateContent?key=${API_KEY}`,
@@ -45,19 +45,17 @@ export async function searchFood(query: string): Promise<FoodData[]> {
     );
 
     if (!response.ok) {
-      const errorData = await response.json();
       if (response.status === 429) {
-        console.error("Rate limit exceeded, please try again in a few moments");
-        return [];
+        throw new Error("Rate limit exceeded, please try again in a few moments");
       }
+      const errorData = await response.json();
       throw new Error(`API Error: ${errorData.error?.message || 'Unknown error'}`);
     }
 
     const data = await response.json();
     
     if (!data.candidates?.[0]?.content?.parts?.[0]?.text) {
-      console.error("Unexpected API response format");
-      return [];
+      throw new Error("Unexpected API response format");
     }
 
     const text = data.candidates[0].content.parts[0].text;
@@ -65,14 +63,13 @@ export async function searchFood(query: string): Promise<FoodData[]> {
     const jsonEndIndex = text.lastIndexOf("]") + 1;
     
     if (jsonStartIndex === -1 || jsonEndIndex === -1) {
-      console.error("Could not find valid JSON in response");
-      return [];
+      throw new Error("Could not find valid JSON in response");
     }
 
     const jsonStr = text.slice(jsonStartIndex, jsonEndIndex);
     return JSON.parse(jsonStr);
   } catch (error) {
     console.error("Error searching food:", error);
-    return [];
+    throw error; // Let React Query handle the error
   }
 }
