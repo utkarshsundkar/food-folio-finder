@@ -4,15 +4,15 @@ import { useQuery } from "@tanstack/react-query";
 import { SearchBar } from "@/components/SearchBar";
 import { MealTypeFilter } from "@/components/MealTypeFilter";
 import { FoodCard } from "@/components/FoodCard";
-import { AddRecipeCard } from "@/components/AddRecipeCard";
 import { searchFood } from "@/utils/gemini";
 import { useToast } from "@/hooks/use-toast";
 import { useDebounce } from "@/hooks/useDebounce";
+import { Input } from "@/components/ui/input";
 
 const Index = () => {
   const [search, setSearch] = useState("");
   const [selectedMealType, setSelectedMealType] = useState("All");
-  const [showAddRecipe, setShowAddRecipe] = useState(false);
+  const [recipeInput, setRecipeInput] = useState("");
   const { toast } = useToast();
   
   const debouncedSearch = useDebounce(search, 1000);
@@ -20,7 +20,7 @@ const Index = () => {
   const { data: foods = [], isLoading, error } = useQuery({
     queryKey: ["foods", debouncedSearch],
     queryFn: () => searchFood(debouncedSearch),
-    enabled: debouncedSearch.length > 2,
+    enabled: debouncedSearch.length > 2 && selectedMealType !== "My Recipes",
     retry: false,
     staleTime: 1000 * 60 * 5,
   });
@@ -32,20 +32,29 @@ const Index = () => {
     });
   };
 
+  const handleRecipeSearch = () => {
+    if (!recipeInput.trim()) {
+      toast({
+        title: "Error",
+        description: "Please enter a recipe description",
+        variant: "destructive",
+      });
+      return;
+    }
+    // Here you would typically process the recipe input
+    // For now, just show a success message
+    toast({
+      title: "Recipe processed",
+      description: "Your recipe is being analyzed",
+    });
+  };
+
   return (
     <div className="min-h-screen bg-gray-50">
       <div className="max-w-md mx-auto px-4 py-6">
         <header className="mb-6">
-          <div className="flex justify-between items-center mb-6">
-            <h1 className="text-2xl font-semibold text-gray-900">Select your meal</h1>
-            <button
-              onClick={() => setShowAddRecipe(!showAddRecipe)}
-              className="px-4 py-2 bg-green-500 text-white rounded-md hover:bg-green-600 transition-colors"
-            >
-              {showAddRecipe ? "Search Foods" : "Add Recipe"}
-            </button>
-          </div>
-          {!showAddRecipe && (
+          <h1 className="text-2xl font-semibold text-gray-900 mb-6">Select your meal</h1>
+          {selectedMealType !== "My Recipes" && (
             <SearchBar 
               value={search} 
               onChange={setSearch}
@@ -53,11 +62,24 @@ const Index = () => {
           )}
         </header>
 
-        {!showAddRecipe && <MealTypeFilter selected={selectedMealType} onSelect={setSelectedMealType} />}
+        <MealTypeFilter selected={selectedMealType} onSelect={setSelectedMealType} />
 
         <div className="mt-6 space-y-4">
-          {showAddRecipe ? (
-            <AddRecipeCard />
+          {selectedMealType === "My Recipes" ? (
+            <div className="space-y-4">
+              <Input
+                value={recipeInput}
+                onChange={(e) => setRecipeInput(e.target.value)}
+                placeholder="A toast with ham and cheese, an apple, a banana and a cappuccino"
+                className="w-full"
+              />
+              <button
+                onClick={handleRecipeSearch}
+                className="w-full py-3 bg-green-500 text-white rounded-md hover:bg-green-600 transition-colors font-medium"
+              >
+                Run Search
+              </button>
+            </div>
           ) : isLoading ? (
             <div className="text-center text-gray-500">Searching...</div>
           ) : error ? (
