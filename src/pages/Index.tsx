@@ -6,14 +6,13 @@ import { MealTypeFilter } from "@/components/MealTypeFilter";
 import { FoodCard } from "@/components/FoodCard";
 import { searchFood } from "@/utils/gemini";
 import { useToast } from "@/hooks/use-toast";
-import { useDebounce } from "@/hooks/useDebounce"; // We'll create this
+import { useDebounce } from "@/hooks/useDebounce";
 
 const Index = () => {
   const [search, setSearch] = useState("");
   const [selectedMealType, setSelectedMealType] = useState("All");
   const { toast } = useToast();
   
-  // Debounce the search value
   const debouncedSearch = useDebounce(search, 1000);
 
   const { data: foods = [], isLoading, error } = useQuery({
@@ -21,13 +20,13 @@ const Index = () => {
     queryFn: () => searchFood(debouncedSearch),
     enabled: debouncedSearch.length > 2,
     retry: false,
-    staleTime: 1000 * 60 * 5, // Cache results for 5 minutes
+    staleTime: 1000 * 60 * 5,
   });
 
-  const handleAddFood = (food: any) => {
+  const handleAddFood = (food: any, quantity: number) => {
     toast({
       title: "Food added",
-      description: `${food.name} has been added to your meal plan.`,
+      description: `${quantity}g of ${food.name} has been added to your meal plan.`,
     });
   };
 
@@ -58,7 +57,7 @@ const Index = () => {
               <FoodCard
                 key={index}
                 {...food}
-                onAdd={() => handleAddFood(food)}
+                onAdd={(quantity) => handleAddFood(food, quantity)}
               />
             ))
           ) : debouncedSearch.length > 2 ? (
