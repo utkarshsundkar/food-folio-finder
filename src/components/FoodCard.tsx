@@ -1,6 +1,13 @@
 
 import { Plus, Minus } from "lucide-react";
 import { useState } from "react";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 
 interface MacroProps {
   label: string;
@@ -25,8 +32,21 @@ interface FoodCardProps {
   onAdd: (quantity: number) => void;
 }
 
+type UnitConversion = {
+  [key: string]: number; // conversion factor to grams
+};
+
+const UNIT_CONVERSIONS: UnitConversion = {
+  g: 1,
+  oz: 28.3495,
+  cup: 128, // Approximate average for general use
+  tbsp: 15,
+  tsp: 5,
+};
+
 export const FoodCard = ({ name, calories, protein, fats, carbs, onAdd }: FoodCardProps) => {
   const [quantity, setQuantity] = useState(100);
+  const [unit, setUnit] = useState("g");
 
   const handleQuantityChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const value = parseInt(e.target.value) || 0;
@@ -37,8 +57,9 @@ export const FoodCard = ({ name, calories, protein, fats, carbs, onAdd }: FoodCa
     setQuantity(prev => Math.max(0, prev + amount));
   };
 
-  // Calculate macros based on quantity
-  const scaleFactor = quantity / 100;
+  // Calculate macros based on quantity and unit
+  const gramsEquivalent = quantity * UNIT_CONVERSIONS[unit];
+  const scaleFactor = gramsEquivalent / 100;
   const scaledCalories = Math.round(calories * scaleFactor);
   const scaledProtein = Math.round(protein * scaleFactor);
   const scaledFats = Math.round(fats * scaleFactor);
@@ -51,11 +72,11 @@ export const FoodCard = ({ name, calories, protein, fats, carbs, onAdd }: FoodCa
           <h3 className="font-medium text-gray-900">{name}</h3>
           <div className="flex items-center gap-1 text-sm text-gray-500">
             <span className="inline-block">🔥</span>
-            <span>{scaledCalories} kcal - {quantity}g</span>
+            <span>{scaledCalories} kcal - {quantity}{unit}</span>
           </div>
         </div>
         <button
-          onClick={() => onAdd(quantity)}
+          onClick={() => onAdd(gramsEquivalent)}
           className="p-2 rounded-full hover:bg-gray-100 transition-colors"
         >
           <Plus className="w-5 h-5 text-gray-600" />
@@ -76,13 +97,18 @@ export const FoodCard = ({ name, calories, protein, fats, carbs, onAdd }: FoodCa
           className="w-20 text-center border rounded-md px-2 py-1"
           min="0"
         />
-        <button
-          onClick={() => adjustQuantity(10)}
-          className="p-1 rounded-full hover:bg-gray-100"
-        >
-          <Plus className="w-4 h-4" />
-        </button>
-        <span className="text-sm text-gray-500">grams</span>
+        <Select value={unit} onValueChange={setUnit}>
+          <SelectTrigger className="w-24">
+            <SelectValue placeholder="Unit" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="g">grams</SelectItem>
+            <SelectItem value="oz">ounces</SelectItem>
+            <SelectItem value="cup">cups</SelectItem>
+            <SelectItem value="tbsp">tablespoons</SelectItem>
+            <SelectItem value="tsp">teaspoons</SelectItem>
+          </SelectContent>
+        </Select>
       </div>
 
       <div className="flex justify-between mt-4 px-4">
