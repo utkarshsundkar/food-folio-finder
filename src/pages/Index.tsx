@@ -4,6 +4,7 @@ import { useQuery } from "@tanstack/react-query";
 import { SearchBar } from "@/components/SearchBar";
 import { MealTypeFilter } from "@/components/MealTypeFilter";
 import { FoodCard } from "@/components/FoodCard";
+import { AddRecipeCard } from "@/components/AddRecipeCard";
 import { searchFood } from "@/utils/gemini";
 import { useToast } from "@/hooks/use-toast";
 import { useDebounce } from "@/hooks/useDebounce";
@@ -11,6 +12,7 @@ import { useDebounce } from "@/hooks/useDebounce";
 const Index = () => {
   const [search, setSearch] = useState("");
   const [selectedMealType, setSelectedMealType] = useState("All");
+  const [showAddRecipe, setShowAddRecipe] = useState(false);
   const { toast } = useToast();
   
   const debouncedSearch = useDebounce(search, 1000);
@@ -36,17 +38,27 @@ const Index = () => {
         <header className="mb-6">
           <div className="flex justify-between items-center mb-6">
             <h1 className="text-2xl font-semibold text-gray-900">Select your meal</h1>
+            <button
+              onClick={() => setShowAddRecipe(!showAddRecipe)}
+              className="px-4 py-2 bg-green-500 text-white rounded-md hover:bg-green-600 transition-colors"
+            >
+              {showAddRecipe ? "Search Foods" : "Add Recipe"}
+            </button>
           </div>
-          <SearchBar 
-            value={search} 
-            onChange={setSearch}
-          />
+          {!showAddRecipe && (
+            <SearchBar 
+              value={search} 
+              onChange={setSearch}
+            />
+          )}
         </header>
 
-        <MealTypeFilter selected={selectedMealType} onSelect={setSelectedMealType} />
+        {!showAddRecipe && <MealTypeFilter selected={selectedMealType} onSelect={setSelectedMealType} />}
 
         <div className="mt-6 space-y-4">
-          {isLoading ? (
+          {showAddRecipe ? (
+            <AddRecipeCard />
+          ) : isLoading ? (
             <div className="text-center text-gray-500">Searching...</div>
           ) : error ? (
             <div className="text-center text-red-500">
