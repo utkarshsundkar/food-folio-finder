@@ -9,15 +9,35 @@ interface FoodData {
   carbs: number;
 }
 
-// Simple delay function to help with rate limiting
 const delay = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
+
+async function fetchWithRetry(url: string, options: RequestInit, retries = 3, baseDelay = 2000): Promise<Response> {
+  for (let i = 0; i < retries; i++) {
+    try {
+      const response = await fetch(url, options);
+      if (response.ok) return response;
+      
+      if (response.status === 503 || response.status === 429) {
+        const backoffDelay = baseDelay * Math.pow(2, i);
+        console.log(`API overloaded, retrying in ${backoffDelay}ms...`);
+        await delay(backoffDelay);
+        continue;
+      }
+      
+      return response;
+    } catch (error) {
+      if (i === retries - 1) throw error;
+      await delay(baseDelay * Math.pow(2, i));
+    }
+  }
+  throw new Error("Max retries reached");
+}
 
 export async function searchFood(query: string): Promise<FoodData[]> {
   try {
-    // Increase delay to 2 seconds
-    await delay(2000);
+    await delay(2000); // Base delay before first attempt
 
-    const response = await fetch(
+    const response = await fetchWithRetry(
       `https://generativelanguage.googleapis.com/v1beta/models/gemini-pro:generateContent?key=${API_KEY}`,
       {
         method: "POST",
@@ -45,6 +65,9 @@ export async function searchFood(query: string): Promise<FoodData[]> {
     );
 
     if (!response.ok) {
+      if (response.status === 503) {
+        throw new Error("Service is temporarily unavailable. Please try again in a few moments.");
+      }
       if (response.status === 429) {
         throw new Error("Rate limit exceeded, please try again in a few moments");
       }
@@ -70,6 +93,6 @@ export async function searchFood(query: string): Promise<FoodData[]> {
     return JSON.parse(jsonStr);
   } catch (error) {
     console.error("Error searching food:", error);
-    throw error; // Let React Query handle the error
+    throw error;
   }
 }
