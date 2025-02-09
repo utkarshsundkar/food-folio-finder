@@ -56,7 +56,7 @@ export const FoodCard = ({
   carbs, 
   onAdd,
   unit = "g",
-  quantity = 100
+  quantity = 1
 }: FoodCardProps) => {
   const [selectedQuantity, setSelectedQuantity] = useState(quantity);
   const [selectedUnit, setSelectedUnit] = useState(unit);
