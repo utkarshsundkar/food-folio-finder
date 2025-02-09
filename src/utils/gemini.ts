@@ -11,23 +11,28 @@ interface FoodData {
 
 const delay = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
 
-async function fetchWithRetry(url: string, options: RequestInit, retries = 2, baseDelay = 1000): Promise<Response> {
+async function fetchWithRetry(url: string, options: RequestInit, retries = 3, baseDelay = 2000): Promise<Response> {
   for (let i = 0; i < retries; i++) {
     try {
       const response = await fetch(url, options);
       
+      // If successful, return the response
       if (response.ok) return response;
       
+      // Handle rate limiting specifically
       if (response.status === 429) {
         console.log(`Rate limited, attempt ${i + 1} of ${retries}. Waiting before retry...`);
-        await delay(baseDelay * Math.pow(1.5, i)); // Using 1.5 instead of 2 for faster backoff
+        // Exponential backoff: wait longer with each retry
+        const backoffDelay = baseDelay * Math.pow(2, i);
+        await delay(backoffDelay);
         continue;
       }
       
+      // For other errors, throw them
       return response;
     } catch (error) {
       if (i === retries - 1) throw error;
-      await delay(baseDelay * Math.pow(1.5, i));
+      await delay(baseDelay * Math.pow(2, i));
     }
   }
   throw new Error("Max retries reached");
@@ -35,8 +40,8 @@ async function fetchWithRetry(url: string, options: RequestInit, retries = 2, ba
 
 export async function searchFood(query: string): Promise<FoodData[]> {
   try {
-    // Reduced initial delay
-    await delay(500);
+    // Add initial delay before first attempt
+    await delay(1000);
 
     const response = await fetchWithRetry(
       `https://generativelanguage.googleapis.com/v1beta/models/gemini-pro:generateContent?key=${API_KEY}`,
@@ -63,8 +68,8 @@ export async function searchFood(query: string): Promise<FoodData[]> {
           }]
         }),
       },
-      2,  // Reduced number of retries
-      1000 // Reduced base delay between retries
+      3,  // Number of retries
+      2000 // Base delay between retries
     );
 
     if (!response.ok) {
