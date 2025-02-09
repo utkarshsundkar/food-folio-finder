@@ -15,15 +15,20 @@ async function fetchWithRetry(url: string, options: RequestInit, retries = 3, ba
   for (let i = 0; i < retries; i++) {
     try {
       const response = await fetch(url, options);
+      
+      // If successful, return the response
       if (response.ok) return response;
       
-      if (response.status === 503 || response.status === 429) {
+      // Handle rate limiting specifically
+      if (response.status === 429) {
+        console.log(`Rate limited, attempt ${i + 1} of ${retries}. Waiting before retry...`);
+        // Exponential backoff: wait longer with each retry
         const backoffDelay = baseDelay * Math.pow(2, i);
-        console.log(`API overloaded, retrying in ${backoffDelay}ms...`);
         await delay(backoffDelay);
         continue;
       }
       
+      // For other errors, throw them
       return response;
     } catch (error) {
       if (i === retries - 1) throw error;
@@ -35,7 +40,8 @@ async function fetchWithRetry(url: string, options: RequestInit, retries = 3, ba
 
 export async function searchFood(query: string): Promise<FoodData[]> {
   try {
-    await delay(2000); // Base delay before first attempt
+    // Add initial delay before first attempt
+    await delay(1000);
 
     const response = await fetchWithRetry(
       `https://generativelanguage.googleapis.com/v1beta/models/gemini-pro:generateContent?key=${API_KEY}`,
@@ -61,15 +67,14 @@ export async function searchFood(query: string): Promise<FoodData[]> {
             }]
           }]
         }),
-      }
+      },
+      3,  // Number of retries
+      2000 // Base delay between retries
     );
 
     if (!response.ok) {
-      if (response.status === 503) {
-        throw new Error("Service is temporarily unavailable. Please try again in a few moments.");
-      }
       if (response.status === 429) {
-        throw new Error("Rate limit exceeded, please try again in a few moments");
+        throw new Error("The service is currently busy. Please wait a moment and try again.");
       }
       const errorData = await response.json();
       throw new Error(`API Error: ${errorData.error?.message || 'Unknown error'}`);
