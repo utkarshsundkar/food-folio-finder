@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { SearchBar } from "@/components/SearchBar";
@@ -16,6 +15,10 @@ const commonFoodUnits = {
   biscuit: { calories: 50, protein: 1, fats: 2, carbs: 7, unit: "piece" },
   apple: { calories: 95, protein: 0.5, fats: 0.3, carbs: 25, unit: "piece" },
   banana: { calories: 105, protein: 1.3, fats: 0.4, carbs: 27, unit: "piece" },
+  rice: { calories: 130, protein: 2.7, fats: 0.3, carbs: 28, unit: "g" },
+  chicken: { calories: 165, protein: 31, fats: 3.6, carbs: 0, unit: "g" },
+  bread: { calories: 75, protein: 2.7, fats: 1, carbs: 13.8, unit: "slice" },
+  egg: { calories: 72, protein: 6.3, fats: 4.8, carbs: 0.4, unit: "piece" },
 };
 
 const parseRecipeInput = (input: string) => {
@@ -33,16 +36,19 @@ const parseRecipeInput = (input: string) => {
     }
     
     // Check if word is a unit
-    if (['g', 'grams', 'pieces', 'piece'].includes(word)) {
+    if (['g', 'grams', 'pieces', 'piece', 'slices', 'slice'].includes(word)) {
       currentUnit = word;
       return;
     }
     
+    // Remove plurals and common variations
+    const singularWord = word.replace(/s$/, '').replace('ies', 'y');
+    
     // Check if it's a common food item
-    if (commonFoodUnits[word]) {
-      const foodItem = commonFoodUnits[word];
+    if (commonFoodUnits[singularWord]) {
+      const foodItem = commonFoodUnits[singularWord];
       foods.push({
-        name: word,
+        name: `${currentQuantity} ${currentQuantity > 1 ? word : singularWord}`,
         calories: foodItem.calories * currentQuantity,
         protein: foodItem.protein * currentQuantity,
         fats: foodItem.fats * currentQuantity,
