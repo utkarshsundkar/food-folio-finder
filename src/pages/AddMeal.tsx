@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { SearchBar } from "@/components/SearchBar";
@@ -8,8 +7,9 @@ import { searchFood } from "@/utils/gemini";
 import { useToast } from "@/hooks/use-toast";
 import { useDebounce } from "@/hooks/useDebounce";
 import { Input } from "@/components/ui/input";
+import { ArrowLeft } from "lucide-react";
+import { Link } from "react-router-dom";
 
-// Common food items with their nutritional values per unit
 const commonFoodUnits = {
   burger: { calories: 350, protein: 15, fats: 14, carbs: 40, unit: "piece" },
   dosa: { calories: 120, protein: 3, fats: 3.5, carbs: 20, unit: "piece" },
@@ -26,19 +26,16 @@ const parseRecipeInput = (input: string) => {
   let currentUnit = '';
   
   words.forEach((word, index) => {
-    // Check if word is a number or numeric string
     if (!isNaN(Number(word))) {
       currentQuantity = Number(word);
       return;
     }
     
-    // Check if word is a unit
     if (['g', 'grams', 'pieces', 'piece'].includes(word)) {
       currentUnit = word;
       return;
     }
     
-    // Check if it's a common food item
     if (commonFoodUnits[word]) {
       const foodItem = commonFoodUnits[word];
       foods.push({
@@ -50,11 +47,10 @@ const parseRecipeInput = (input: string) => {
         quantity: currentQuantity,
         unit: foodItem.unit
       });
-      currentQuantity = 1; // Reset quantity
+      currentQuantity = 1;
       return;
     }
     
-    // For other items, try to parse from the search API
     if (word.length > 2 && !['and', 'with', 'the', 'of'].includes(word)) {
       foods.push({
         name: word,
@@ -107,7 +103,6 @@ const Index = () => {
     try {
       const parsedFoods = parseRecipeInput(recipeInput);
       
-      // For each non-common food item, fetch nutritional data
       const results = await Promise.all(
         parsedFoods.map(async (food) => {
           if (food.searchTerm) {
@@ -145,7 +140,12 @@ const Index = () => {
     <div className="min-h-screen bg-gray-50">
       <div className="max-w-md mx-auto px-4 py-6">
         <header className="mb-6">
-          <h1 className="text-2xl font-semibold text-gray-900 mb-6">Select your meal</h1>
+          <div className="flex items-center gap-4 mb-6">
+            <Link to="/" className="text-gray-600 hover:text-gray-900">
+              <ArrowLeft className="w-6 h-6" />
+            </Link>
+            <h1 className="text-2xl font-semibold text-gray-900 mb-6">Select your meal</h1>
+          </div>
           {selectedMealType !== "My Recipes" && (
             <SearchBar 
               value={search} 
