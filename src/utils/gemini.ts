@@ -11,7 +11,7 @@ interface FoodData {
 
 const delay = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
 
-async function fetchWithRetry(url: string, options: RequestInit, retries = 3, baseDelay = 2000): Promise<Response> {
+async function fetchWithRetry(url: string, options: RequestInit, retries = 3, baseDelay = 1000): Promise<Response> {
   for (let i = 0; i < retries; i++) {
     try {
       const response = await fetch(url, options);
@@ -23,7 +23,7 @@ async function fetchWithRetry(url: string, options: RequestInit, retries = 3, ba
       if (response.status === 429) {
         console.log(`Rate limited, attempt ${i + 1} of ${retries}. Waiting before retry...`);
         // Exponential backoff: wait longer with each retry
-        const backoffDelay = baseDelay * Math.pow(2, i);
+        const backoffDelay = baseDelay * Math.pow(1.5, i);
         await delay(backoffDelay);
         continue;
       }
@@ -32,7 +32,7 @@ async function fetchWithRetry(url: string, options: RequestInit, retries = 3, ba
       return response;
     } catch (error) {
       if (i === retries - 1) throw error;
-      await delay(baseDelay * Math.pow(2, i));
+      await delay(baseDelay * Math.pow(1.5, i));
     }
   }
   throw new Error("Max retries reached");
@@ -40,8 +40,8 @@ async function fetchWithRetry(url: string, options: RequestInit, retries = 3, ba
 
 export async function searchFood(query: string): Promise<FoodData[]> {
   try {
-    // Add initial delay before first attempt
-    await delay(1000);
+    // Reduced initial delay from 1000ms to 300ms
+    await delay(300);
 
     const response = await fetchWithRetry(
       `https://generativelanguage.googleapis.com/v1beta/models/gemini-pro:generateContent?key=${API_KEY}`,
@@ -69,7 +69,7 @@ export async function searchFood(query: string): Promise<FoodData[]> {
         }),
       },
       3,  // Number of retries
-      2000 // Base delay between retries
+      1000 // Reduced base delay between retries from 2000ms to 1000ms
     );
 
     if (!response.ok) {
