@@ -1,8 +1,17 @@
-
 import { Bell, Search } from "lucide-react";
 import { Link } from "react-router-dom";
+import { CalorieTargetDialog } from "@/components/CalorieTargetDialog";
+import { useNutrition } from "@/contexts/NutritionContext";
 
 const Home = () => {
+  const { calorieTarget, currentCalories, macros, updateCalorieTarget } = useNutrition();
+
+  const calculateProgress = () => {
+    return Math.round((currentCalories / calorieTarget) * 100);
+  };
+
+  const progressOffset = 553 - ((calculateProgress() / 100) * 553);
+
   return (
     <div className="max-w-md mx-auto px-4 py-6 bg-white min-h-screen">
       {/* Header */}
@@ -28,8 +37,11 @@ const Home = () => {
       <div className="mb-8">
         <div className="relative w-48 h-48 mx-auto mb-4">
           <div className="absolute inset-0 flex items-center justify-center flex-col">
-            <div className="text-3xl font-bold">1721 Kcal</div>
-            <div className="text-gray-500 text-sm">of 2213 kcal</div>
+            <div className="text-3xl font-bold flex items-center gap-2">
+              {currentCalories} Kcal
+              <CalorieTargetDialog onUpdateTarget={updateCalorieTarget} />
+            </div>
+            <div className="text-gray-500 text-sm">of {calorieTarget} kcal</div>
           </div>
           <svg className="w-full h-full transform -rotate-90">
             <circle
@@ -48,7 +60,7 @@ const Home = () => {
               stroke="#FF6B6B"
               strokeWidth="16"
               strokeDasharray="553"
-              strokeDashoffset="166"
+              strokeDashoffset={progressOffset}
             />
           </svg>
         </div>
@@ -58,28 +70,43 @@ const Home = () => {
           <div>
             <div className="text-sm font-medium">Protein</div>
             <div className="h-2 bg-green-200 rounded-full mt-1 mb-1">
-              <div className="h-full bg-green-500 rounded-full" style={{ width: '86%' }} />
+              <div 
+                className="h-full bg-green-500 rounded-full" 
+                style={{ width: `${(macros.protein.current / macros.protein.target) * 100}%` }} 
+              />
             </div>
-            <div className="text-sm text-gray-500">78/90g</div>
+            <div className="text-sm text-gray-500">
+              {macros.protein.current}/{macros.protein.target}g
+            </div>
           </div>
           <div>
             <div className="text-sm font-medium">Fats</div>
             <div className="h-2 bg-orange-200 rounded-full mt-1 mb-1">
-              <div className="h-full bg-orange-500 rounded-full" style={{ width: '64%' }} />
+              <div 
+                className="h-full bg-orange-500 rounded-full" 
+                style={{ width: `${(macros.fats.current / macros.fats.target) * 100}%` }} 
+              />
             </div>
-            <div className="text-sm text-gray-500">45/70g</div>
+            <div className="text-sm text-gray-500">
+              {macros.fats.current}/{macros.fats.target}g
+            </div>
           </div>
           <div>
             <div className="text-sm font-medium">Carbs</div>
             <div className="h-2 bg-blue-200 rounded-full mt-1 mb-1">
-              <div className="h-full bg-blue-500 rounded-full" style={{ width: '86%' }} />
+              <div 
+                className="h-full bg-blue-500 rounded-full" 
+                style={{ width: `${(macros.carbs.current / macros.carbs.target) * 100}%` }} 
+              />
             </div>
-            <div className="text-sm text-gray-500">95/110g</div>
+            <div className="text-sm text-gray-500">
+              {macros.carbs.current}/{macros.carbs.target}g
+            </div>
           </div>
         </div>
 
         <div className="text-xl font-semibold mb-4">Track your diet journey</div>
-        <div className="text-gray-500 mb-4">Today Calorie: 1783</div>
+        <div className="text-gray-500 mb-4">Today Calorie: {currentCalories}</div>
 
         {/* Meal Buttons */}
         <div className="space-y-3">

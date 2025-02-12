@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { SearchBar } from "@/components/SearchBar";
@@ -11,8 +10,12 @@ import { Link } from "react-router-dom";
 import { parseRecipeInput, type FoodItem } from "@/utils/foodUtils";
 import { RecipeInput } from "@/components/RecipeInput";
 import { SearchResults } from "@/components/SearchResults";
+import { useNutrition } from "@/contexts/NutritionContext";
+import { useNavigate } from "react-router-dom";
 
 const AddMeal = () => {
+  const navigate = useNavigate();
+  const { addFood } = useNutrition();
   const [search, setSearch] = useState("");
   const [selectedMealType, setSelectedMealType] = useState("All");
   const [recipeInput, setRecipeInput] = useState("");
@@ -30,10 +33,19 @@ const AddMeal = () => {
   });
 
   const handleAddFood = (food: FoodItem, quantity: number) => {
+    const scaleFactor = quantity / 100; // Convert to per 100g basis
+    addFood(
+      food.calories * scaleFactor,
+      food.protein * scaleFactor,
+      food.fats * scaleFactor,
+      food.carbs * scaleFactor
+    );
+    
     toast({
       title: "Food added",
       description: `${quantity}${food.unit || 'g'} of ${food.name} has been added to your meal plan.`,
     });
+    navigate('/');
   };
 
   const handleRecipeSearch = async () => {
